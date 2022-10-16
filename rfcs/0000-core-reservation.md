@@ -15,7 +15,7 @@ We need a common solution for various reservation requirements: 1) calendar book
 
 Basic architecture:
 
-![basic arch](images/arch1.jpg)
+![basic arch](images/arch.png)
 
 ### Service interface
 
