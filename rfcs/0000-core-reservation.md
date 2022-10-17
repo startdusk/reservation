@@ -181,3 +181,44 @@ CREATE TRIGGER reservations_trigger
     AFTER INSERT OR UPDATE OR DELETE ON rsvp.reservations
     FOR EACH ROW EXECUTE PROCEDURE rsvp.reservations_trigger();
 ```
+
+Here we use EXCLUDE constraint provided by postgres to ensure that on overlapping reservations cannot be made for a given resource at a given time.
+
+```sql
+CONSTRAINT reservations_conflict EXCLUDE USING gist (resource_id WITH =, timespan WITH &&)
+```
+
+![overlapping](images/overlapping.png)
+
+We also use a trigger to notify a channel when a reservation is added/updated/deleted. To make sure even we missed certain messages from the channel when DB connection is down for some reason, we use a queue to store reservation changes. Thus when we receive a notification, we can query the queue to get all the changes since last time we checked, and once we finished processing all the changes, we can delete them from the queue.
+
+### Core flow
+
+![core flow](images/core-flow.png)
+
+## Reference-level explanation
+
+TBD
+
+## Drawbacks
+
+N/A
+
+## Rationale and alternatives
+
+N/A
+
+## Prior art
+
+N/A
+
+## Unresolved questions
+
+- how to handle repeated reservation? - is this more ore less a business logic which shouldn't be put into this layer? (non-goal: we consider this is a business logic and should be handled by the caller)
+- if load is big, we may use an external queue for recording changes.
+- we haven't considered tracking/observability/deployment yet.
+- query performance might be an issue - need to revisit the index and also consider using cache.
+
+## Future possibilities
+
+TBD

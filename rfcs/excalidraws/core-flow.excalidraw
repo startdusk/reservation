@@ -787,8 +787,8 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "seed": 1613972325,
-      "version": 440,
-      "versionNonce": 1225062955,
+      "version": 441,
+      "versionNonce": 233279147,
       "isDeleted": false,
       "boundElements": [
         {
@@ -798,9 +798,13 @@
         {
           "type": "text",
           "id": "PZrxtTOHDuq3Cw3fUgVoQ"
+        },
+        {
+          "id": "pHZ4zQV8pDnbXk6uX-9EN",
+          "type": "arrow"
         }
       ],
-      "updated": 1665908618697,
+      "updated": 1666013221016,
       "link": null,
       "locked": false
     },
@@ -1321,6 +1325,51 @@
       "baseline": 284,
       "containerId": null,
       "originalText": "Notes:\n\n1. implement sqlx::Type for protobuf enum types.\n2. implement FromRow for Reservation structure.\n\n\n\n\nCLI:\n\n1. rsvp server start/stop: start/stop gRPC service.\n2. rsvp reserve create - r <resource_id> -u <user_id> -w (start, interval).\n3. rsvp reserve get <id>.\n4. rsvp reserve cancel <id>.\n5. rsvp reserve query -r <resource_id> -u <user_id> -w (start, interval)."
+    },
+    {
+      "id": "pHZ4zQV8pDnbXk6uX-9EN",
+      "type": "arrow",
+      "x": 956.9017942598674,
+      "y": 203.79692909456026,
+      "width": 145.79633584516932,
+      "height": 1.006564561377786,
+      "angle": 0,
+      "strokeColor": "#000000",
+      "backgroundColor": "transparent",
+      "fillStyle": "hachure",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "strokeSharpness": "sharp",
+      "seed": 791197835,
+      "version": 154,
+      "versionNonce": 1215418917,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1666013221016,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -145.79633584516932,
+          -1.006564561377786
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": {
+        "elementId": "cj3Vgp5877gAilBm6tskN",
+        "focus": -0.7987923363638438,
+        "gap": 1
+      },
+      "endBinding": null,
+      "startArrowhead": null,
+      "endArrowhead": "arrow"
     }
   ],
   "appState": {
