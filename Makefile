@@ -1,0 +1,3 @@
+.PHONY: codeline
+codeline:
+	@tokei .
