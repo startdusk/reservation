@@ -127,16 +127,17 @@ service ReservationService {
 We use postgres as the database. Below is the schema:
 
 ```sql
-CREATE SCHEMA rsvp; # SCHEMA like namespace
+CREATE SCHEMA rsvp; -- SCHEMA like namespace
 CREATE TYPE rsvp.reservation_status AS ENUM ('unknow', 'pending', 'confirmed', 'blocked');
 CREATE TYPE rsvp.reservation_update_type AS ENUM ('unknown', 'create', 'update', 'delete');
+CREATE EXTENSION btree_gist; -- for using gist
 
 CREATE TABLE rsvp.reservations (
-    id uuid NOT NULL DEFAULT uuid_generate_v4(),
-    user_id VARCHAR(64) NOT NULL, # user_id may be int or uuid in other systems, we want to be compatible with it, so use string
-    status rsvp.reservation_status NOT NULL 'pending',
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    user_id VARCHAR(64) NOT NULL, -- user_id may be int or uuid in other systems, we want to be compatible with it, so use string
+    status rsvp.reservation_status NOT NULL DEFAULT 'pending',
 
-    resource_id VARCHAR(64) NOT NULL, # resource_id may be int or uuid in other systems, we want to be compatible with it, so use string
+    resource_id VARCHAR(64) NOT NULL, -- resource_id may be int or uuid in other systems, we want to be compatible with it, so use string
     timespan TSTZRANGE NOT NULL,
 
     note TEXT,
@@ -152,7 +153,23 @@ CREATE INDEX reservations_user_id_idx ON rsvp.reservations (user_id);
 -- if resource_id is null, find all reservations within during for the user
 -- if both are null, find all reservations within during
 -- if both set, find all reservations within during for the resource and user
-CREATE OR REPLACE FUNCTION rsvp.query(uid text, rid text, during: TSTZRANGE) RETURNS TABLE rsvp.reservations AS $$ $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION rsvp.query(uid text, rid text, during TSTZRANGE) RETURNS TABLE (LIKE rsvp.reservations) AS $$
+BEGIN
+    -- if both are null, find all reservations within during
+    IF uid IS NULL AND rid IS NULL THEN
+        RETURN QUERY SELECT * FROM rsvp.reservations WHERE timespan && during;
+    ELSEIF uid IS NULL THEN
+        -- if user_id is null, find all reservations within during for the resource
+        RETURN QUERY SELECT * FROM rsvp.reservations WHERE resource_id = rid AND during @> timespan;
+    ELSEIF rid IS NULL THEN
+        -- if resource_id is null, find all reservations within during for the user
+        RETURN QUERY SELECT * FROM rsvp.reservations WHERE user_id = uid AND during @> timespan;
+    ELSE
+        -- if both set, find all reservations within during for the resource and user
+        RETURN QUERY SELECT * FROM rsvp.reservations WHERE resource_id = rid AND user_id = uid AND during @> timespan;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
 -- resevation change queue
 CREATE TABLE rsvp.reservation_changes (
