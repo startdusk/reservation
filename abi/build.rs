@@ -6,6 +6,7 @@ fn main() {
     fs::create_dir_all(path).unwrap();
     tonic_build::configure()
         .out_dir(path)
+        .type_attribute("reservation.ReservationStatus", "#[derive(sqlx::Type)]")
         .compile(&["protos/reservation.proto"], &["protos"])
         .unwrap();
 
