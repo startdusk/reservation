@@ -1,6 +1,7 @@
 .PHONY: codeline
 codeline:
 	@tokei .
+	@
 
 .PHONY: initdb
 initdb:
@@ -12,3 +13,11 @@ initdb:
     -d \
     --name=reservation \
     postgres -N 1000
+
+.PHONY: test 
+test: 
+	@cargo nextest run
+
+.PHONY: fmt
+fmt:
+	@cargo clippy
