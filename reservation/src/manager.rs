@@ -102,6 +102,15 @@ mod tests {
         );
         let _rsvp1 = manager.reserve(rsvp1).await.unwrap();
         let err = manager.reserve(rsvp2).await.unwrap_err();
-        dbg!(err);
+        if let abi::Error::ConflictReservation(abi::ReservationConflictInfo::Parsed(info)) = err {
+            assert_eq!(info.new.rid, "ocean-view-room-713");
+            assert_eq!(info.new.start.to_rfc3339(), "2022-12-26T22:00:00+00:00");
+            assert_eq!(info.new.end.to_rfc3339(), "2022-12-30T19:00:00+00:00");
+            assert_eq!(info.old.rid, "ocean-view-room-713");
+            assert_eq!(info.old.start.to_rfc3339(), "2022-12-25T22:00:00+00:00");
+            assert_eq!(info.old.end.to_rfc3339(), "2022-12-28T19:00:00+00:00");
+        } else {
+            panic!("expect conflict reservation error")
+        }
     }
 }

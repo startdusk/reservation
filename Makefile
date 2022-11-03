@@ -15,7 +15,7 @@ initdb:
     postgres -N 1000
 
 .PHONY: test 
-test: 
+test: fmt
 	@cargo nextest run
 
 .PHONY: fmt

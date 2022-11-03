@@ -5,5 +5,5 @@ mod utils;
 
 pub use utils::*;
 
-pub use error::Error;
+pub use error::{Error, ReservationConflictInfo, ReservationWindow};
 pub use pb::*;
