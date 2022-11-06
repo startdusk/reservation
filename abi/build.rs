@@ -1,4 +1,4 @@
-use std::{fs, process::Command};
+use std::{fs, path::Path, process::Command};
 
 fn main() {
     let path = "src/pb";
@@ -10,7 +10,10 @@ fn main() {
         .compile(&["protos/reservation.proto"], &["protos"])
         .unwrap();
 
-    fs::remove_file("src/pb/google.protobuf.rs").unwrap();
+    let exlude_file = Path::new("src/pb/google.protobuf.rs");
+    if exlude_file.exists() {
+        fs::remove_file(exlude_file).unwrap();
+    }
 
     Command::new("cargo").args(&["fmt"]).output().unwrap();
 

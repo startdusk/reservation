@@ -27,11 +27,11 @@ impl FromStr for ReservationConflictInfo {
     type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Ok(conflict) = s.parse() {
-            Ok(ReservationConflictInfo::Parsed(conflict))
-        } else {
-            Ok(ReservationConflictInfo::Unparsed(s.to_string()))
-        }
+        let Ok(conflict) = s.parse() else {
+            return Ok(ReservationConflictInfo::Unparsed(s.to_string()))
+        };
+
+        Ok(ReservationConflictInfo::Parsed(conflict))
     }
 }
 
