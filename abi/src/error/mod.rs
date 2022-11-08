@@ -20,7 +20,7 @@ pub enum Error {
     InvalidReservationId(String),
 
     #[error("No reservation found by the given condition")]
-    RowNotFound,
+    NotFound,
 
     #[error("Conflict reservation")]
     ConflictReservation(ReservationConflictInfo),
@@ -41,7 +41,7 @@ impl PartialEq for Error {
             (Self::InvalidReservationId(v1), Self::InvalidReservationId(v2)) => v1 == v2,
             (Self::ConflictReservation(v1), Self::ConflictReservation(v2)) => v1 == v2,
             (Self::InvalidResourceId(v1), Self::InvalidResourceId(v2)) => v1 == v2,
-            (Self::RowNotFound, Self::RowNotFound) => true,
+            (Self::NotFound, Self::NotFound) => true,
             (Self::Unknown, Self::Unknown) => true,
             (Self::InvalidTime, Self::InvalidTime) => true,
             _ => false,
@@ -61,7 +61,7 @@ impl From<sqlx::Error> for Error {
                     _ => Error::DbError(sqlx::Error::Database(e)),
                 }
             }
-            sqlx::Error::RowNotFound => Error::RowNotFound,
+            sqlx::Error::RowNotFound => Error::NotFound,
 
             _ => Error::DbError(e),
         }

@@ -119,15 +119,7 @@ mod tests {
 
     #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
     async fn reserve_should_work_for_valid_window() {
-        let manager = ReservationManager::new(migrated_pool.clone());
-        let rsvp = abi::Reservation::new_pending(
-            "user_id",
-            "ocean-view-room-713",
-            "2022-12-25T15:00:00-0700".parse().unwrap(),
-            "2022-12-28T12:00:00-0700".parse().unwrap(),
-            "I'll arrive at 3pm. Please help to upgrade to execuitive room if possible.",
-        );
-        let rsvp = manager.reserve(rsvp).await.unwrap();
+        let (rsvp, _) = make_user_one_reservation(migrated_pool.clone()).await;
         assert!(rsvp.id != "");
     }
 
@@ -169,15 +161,7 @@ mod tests {
 
     #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
     async fn reserve_change_status_should_work() {
-        let manager = ReservationManager::new(migrated_pool.clone());
-        let rsvp = abi::Reservation::new_pending(
-            "aliceid",
-            "ixia-test-1",
-            "2022-01-25T15:00:00-0700".parse().unwrap(),
-            "2022-02-28T12:00:00-0700".parse().unwrap(),
-            "I need to book this for xyz project for a month.",
-        );
-        let rsvp = manager.reserve(rsvp).await.unwrap();
+        let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
         assert!(rsvp.id != "");
 
         let rsvp = manager.change_status(rsvp.id).await.unwrap();
@@ -186,21 +170,13 @@ mod tests {
 
     #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
     async fn reserve_change_status_not_pending_should_do_nothing() {
-        let manager = ReservationManager::new(migrated_pool.clone());
-        let rsvp = abi::Reservation::new_pending(
-            "aliceid",
-            "ixia-test-1",
-            "2022-01-25T15:00:00-0700".parse().unwrap(),
-            "2022-02-28T12:00:00-0700".parse().unwrap(),
-            "I need to book this for xyz project for a month.",
-        );
-        let rsvp = manager.reserve(rsvp).await.unwrap();
+        let (rsvp, manager) = make_user_two_reservation(migrated_pool.clone()).await;
         assert!(rsvp.id != "");
 
         let rsvp = manager.change_status(rsvp.id).await.unwrap();
         // change status again should do nothing
         let err = manager.change_status(rsvp.id).await.unwrap_err();
-        assert_eq!(err, abi::Error::RowNotFound);
+        assert_eq!(err, abi::Error::NotFound);
     }
 
     #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
@@ -225,7 +201,7 @@ mod tests {
         let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
         manager.delete(rsvp.id.clone()).await.unwrap();
         let err = manager.get(rsvp.id.clone()).await.unwrap_err();
-        assert_eq!(err, abi::Error::RowNotFound);
+        assert_eq!(err, abi::Error::NotFound);
     }
 
     async fn make_user_one_reservation(pool: PgPool) -> (Reservation, ReservationManager) {
