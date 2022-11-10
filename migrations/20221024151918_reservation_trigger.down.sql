@@ -1,4 +1,4 @@
-DROP TRIGGER reservation_trigger ON rsvp.reservations;
+DROP TRIGGER reservations_trigger ON rsvp.reservations;
 
 DROP FUNCTION rsvp.reservations_trigger();
 

@@ -102,6 +102,15 @@ pub struct ReservationQuery {
     /// end time for the reservation query, if 0, use Infinty for end time
     #[prost(message, optional, tag = "5")]
     pub end: ::core::option::Option<::prost_types::Timestamp>,
+    /// current page for the query
+    #[prost(int32, tag = "6")]
+    pub page: i32,
+    /// page size for the query
+    #[prost(int32, tag = "7")]
+    pub page_size: i32,
+    /// sort direction
+    #[prost(bool, tag = "8")]
+    pub desc: bool,
 }
 /// To query reservation, send a QueryRequest
 #[derive(Clone, PartialEq, ::prost::Message)]
