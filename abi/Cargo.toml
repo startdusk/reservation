@@ -13,6 +13,7 @@ tonic = { version = "0.8.2", features = ["gzip"] }
 sqlx = { version = "0.6.2", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid"] }
 thiserror = "1.0.37"
 regex = "1.5"
+derive_builder = "0.11.2"
 
 [build-dependencies]
 tonic-build = "0.8.2"

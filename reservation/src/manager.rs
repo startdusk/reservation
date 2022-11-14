@@ -112,16 +112,18 @@ impl Rsvp for ReservationManager {
         let range: PgRange<DateTime<Utc>> = query.get_timespan();
         let status = abi::ReservationStatus::from_i32(query.status)
             .unwrap_or(abi::ReservationStatus::Pending);
-        let rsvps = sqlx::query_as("SELECT * FROM rsvp.query($1, $2, $3, $4::rsvp.reservation_status, $5, $6, $7)")
-            .bind(user_id)
-            .bind(resource_id)
-            .bind(range)
-            .bind(status.to_string())
-            .bind(query.page)
-            .bind(query.desc)
-            .bind(query.page_size)
-            .fetch_all(&self.pool)
-            .await?;
+        let rsvps = sqlx::query_as(
+            "SELECT * FROM rsvp.query($1, $2, $3, $4::rsvp.reservation_status, $5, $6, $7)",
+        )
+        .bind(user_id)
+        .bind(resource_id)
+        .bind(range)
+        .bind(status.to_string())
+        .bind(query.page)
+        .bind(query.desc)
+        .bind(query.page_size)
+        .fetch_all(&self.pool)
+        .await?;
 
         Ok(rsvps)
     }
@@ -138,9 +140,10 @@ fn str_to_option(s: &str) -> Option<&str> {
 #[cfg(test)]
 mod tests {
     use abi::{
-        Reservation, ReservationConflict, ReservationConflictInfo, ReservationQuery,
+        Reservation, ReservationConflict, ReservationConflictInfo, ReservationQueryBuilder,
         ReservationStatus, ReservationWindow,
     };
+    use prost_types::Timestamp;
     use sqlx::PgPool;
 
     use super::*;
@@ -237,17 +240,45 @@ mod tests {
         let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
         assert!(rsvp.id != "");
 
-        let query = ReservationQuery::new(
-            "user_id_1",
-            "ocean-view-room-713",
-            "2022-12-25T15:00:00-0700".parse().unwrap(),
-            "2022-12-28T12:00:00-0700".parse().unwrap(),
-            ReservationStatus::Pending,
-            1,
-            10,
-            false,
-        );
+        let query = ReservationQueryBuilder::default()
+            .user_id("user_id_1")
+            .resource_id("ocean-view-room-713")
+            .start("2022-12-25T15:00:00-0700".parse::<Timestamp>().unwrap())
+            .end("2022-12-28T12:00:00-0700".parse::<Timestamp>().unwrap())
+            .status(ReservationStatus::Pending)
+            .build()
+            .unwrap();
 
+        let rsvps = manager.query(query).await.unwrap();
+        assert_eq!(rsvps.len(), 1);
+        assert_eq!(rsvps[0], rsvp);
+
+        // if window is not in range, should return empty
+        let query = ReservationQueryBuilder::default()
+            .user_id("user_id_1")
+            .resource_id("ocean-view-room-713")
+            .start("2023-12-25T15:00:00-0700".parse::<Timestamp>().unwrap())
+            .end("2023-12-28T12:00:00-0700".parse::<Timestamp>().unwrap())
+            .status(ReservationStatus::Pending)
+            .build()
+            .unwrap();
+        let rsvps = manager.query(query).await.unwrap();
+        assert_eq!(rsvps.len(), 0);
+
+        // if status is not in correct, should return empty
+        let query = ReservationQueryBuilder::default()
+            .user_id("user_id_1")
+            .resource_id("ocean-view-room-713")
+            .start("2022-12-25T15:00:00-0700".parse::<Timestamp>().unwrap())
+            .end("2022-12-28T12:00:00-0700".parse::<Timestamp>().unwrap())
+            .status(ReservationStatus::Confirmed)
+            .build()
+            .unwrap();
+        let rsvps = manager.query(query.clone()).await.unwrap();
+        assert_eq!(rsvps.len(), 0);
+
+        // change state to confirmed, query should get result
+        let rsvp = manager.change_status(rsvp.id).await.unwrap();
         let rsvps = manager.query(query).await.unwrap();
         assert_eq!(rsvps.len(), 1);
         assert_eq!(rsvps[0], rsvp);
