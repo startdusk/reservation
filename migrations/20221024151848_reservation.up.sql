@@ -2,7 +2,7 @@ CREATE TYPE rsvp.reservation_status AS ENUM ('unknow', 'pending', 'confirmed', '
 CREATE TYPE rsvp.reservation_update_type AS ENUM ('unknown', 'create', 'update', 'delete');
 
 CREATE TABLE rsvp.reservations (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    id bigserial NOT NULL,
     user_id VARCHAR(64) NOT NULL, -- user_id may be int or uuid in other systems, we want to be compatible with it, so use string
     status rsvp.reservation_status NOT NULL DEFAULT 'pending',
 

@@ -30,7 +30,10 @@ fn main() {
         fs::remove_file(exlude_file).unwrap();
     }
 
-    Command::new("cargo").args(&["fmt"]).output().unwrap();
+    Command::new("cargo")
+        .args(&["fmt".to_string()])
+        .output()
+        .unwrap();
 
     println!("cargo:rerun-if-changed=protos/reservation.proto");
 }

@@ -1,8 +1,8 @@
 use abi::Validator;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use sqlx::postgres::types::PgRange;
 use sqlx::Row;
-use sqlx::{postgres::types::PgRange, types::Uuid};
 
 use crate::{ReservationId, ReservationManager, Rsvp};
 
@@ -19,7 +19,7 @@ impl Rsvp for ReservationManager {
 
         // generate a insert sql for the reservation
         // execute the sql
-        let id: Uuid = sqlx::query(
+        let id: i64 = sqlx::query(
             r#"
                 INSERT INTO rsvp.reservations (user_id, resource_id, timespan, note, status)
                 VALUES ($1, $2, $3, $4, $5::rsvp.reservation_status) RETURNING id
@@ -34,13 +34,13 @@ impl Rsvp for ReservationManager {
         .await?
         .get(0);
 
-        rsvp.id = id.to_string();
+        rsvp.id = id;
         Ok(rsvp)
     }
 
     /// change reservation status (if current status is pending, change it to confirmed, otherwise do nothing)
     async fn change_status(&self, id: ReservationId) -> Result<abi::Reservation, abi::Error> {
-        let id = Uuid::parse_str(&id).map_err(|_| abi::Error::InvalidReservationId(id.clone()))?;
+        id.validate()?;
         let rsvp: abi::Reservation = sqlx::query_as(
             r#"
                 UPDATE rsvp.reservations SET status = 'confirmed' WHERE id = $1 AND status = 'pending'
@@ -59,7 +59,7 @@ impl Rsvp for ReservationManager {
         id: ReservationId,
         note: String,
     ) -> Result<abi::Reservation, abi::Error> {
-        let id = Uuid::parse_str(&id).map_err(|_| abi::Error::InvalidReservationId(id.clone()))?;
+        id.validate()?;
         let rsvp: abi::Reservation = sqlx::query_as(
             r#"
                 UPDATE rsvp.reservations SET note = $1 WHERE id = $2
@@ -76,7 +76,7 @@ impl Rsvp for ReservationManager {
 
     /// delete reservation
     async fn delete(&self, id: ReservationId) -> Result<(), abi::Error> {
-        let id = Uuid::parse_str(&id).map_err(|_| abi::Error::InvalidReservationId(id.clone()))?;
+        id.validate()?;
         sqlx::query(
             r#"
                 DELETE FROM rsvp.reservations WHERE id = $1
@@ -90,7 +90,7 @@ impl Rsvp for ReservationManager {
     }
     /// get reservation by id
     async fn get(&self, id: ReservationId) -> Result<abi::Reservation, abi::Error> {
-        let id = Uuid::parse_str(&id).map_err(|_| abi::Error::InvalidReservationId(id.clone()))?;
+        id.validate()?;
         let rsvp: abi::Reservation = sqlx::query_as(
             r#"
                 SELECT * FROM rsvp.reservations WHERE id = $1
@@ -151,7 +151,7 @@ mod tests {
     #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
     async fn reserve_should_work_for_valid_window() {
         let (rsvp, _) = make_user_one_reservation(migrated_pool.clone()).await;
-        assert!(rsvp.id != "");
+        assert!(rsvp.id != 0);
     }
 
     #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
@@ -193,7 +193,7 @@ mod tests {
     #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
     async fn reserve_change_status_should_work() {
         let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
-        assert!(rsvp.id != "");
+        assert!(rsvp.id != 0);
 
         let rsvp = manager.change_status(rsvp.id).await.unwrap();
         assert_eq!(rsvp.status, abi::ReservationStatus::Confirmed as i32);
@@ -202,7 +202,7 @@ mod tests {
     #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
     async fn reserve_change_status_not_pending_should_do_nothing() {
         let (rsvp, manager) = make_user_two_reservation(migrated_pool.clone()).await;
-        assert!(rsvp.id != "");
+        assert!(rsvp.id != 0);
 
         let rsvp = manager.change_status(rsvp.id).await.unwrap();
         // change status again should do nothing
@@ -230,15 +230,15 @@ mod tests {
     #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
     async fn delete_reservation_should_work() {
         let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
-        manager.delete(rsvp.id.clone()).await.unwrap();
-        let err = manager.get(rsvp.id.clone()).await.unwrap_err();
+        manager.delete(rsvp.id).await.unwrap();
+        let err = manager.get(rsvp.id).await.unwrap_err();
         assert_eq!(err, abi::Error::NotFound);
     }
 
     #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
     async fn query_reservations_should_work() {
         let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
-        assert!(rsvp.id != "");
+        assert!(rsvp.id != 0);
 
         let query = ReservationQueryBuilder::default()
             .user_id("user_id_1")

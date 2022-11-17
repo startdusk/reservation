@@ -1,7 +1,6 @@
 .PHONY: codeline
 codeline:
 	@tokei .
-	@
 
 .PHONY: initdb
 initdb:

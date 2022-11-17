@@ -21,3 +21,19 @@ pub enum RsvpStatus {
     Pending,
     Blocked,
 }
+
+pub type ReservationId = i64;
+
+impl Validator for ReservationId {
+    fn validate(&self) -> Result<(), Error> {
+        if *self <= 0 {
+            return Err(Error::InvalidReservationId(*self));
+        }
+
+        Ok(())
+    }
+}
+
+pub type UserId = String;
+
+pub type ResourceId = String;
