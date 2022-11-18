@@ -4,7 +4,6 @@ use abi::ReservationId;
 use async_trait::async_trait;
 use sqlx::PgPool;
 
-
 #[derive(Debug)]
 pub struct ReservationManager {
     pool: PgPool,
@@ -37,4 +36,9 @@ pub trait Rsvp {
         &self,
         query: abi::ReservationQuery,
     ) -> Result<Vec<abi::Reservation>, abi::Error>;
+    /// filter reservations order by reservation id
+    async fn filter(
+        &self,
+        filter: abi::ReservationFilter,
+    ) -> Result<(abi::FilterPager, Vec<abi::Reservation>), abi::Error>;
 }

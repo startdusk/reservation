@@ -1,4 +1,4 @@
-use abi::Validator;
+use abi::{FilterPager, Validator};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::postgres::types::PgRange;
@@ -127,6 +127,58 @@ impl Rsvp for ReservationManager {
 
         Ok(rsvps)
     }
+
+    /// filter reservations by user_id, resource_id, status, and order by id
+    async fn filter(
+        &self,
+        filter: abi::ReservationFilter,
+    ) -> Result<(abi::FilterPager, Vec<abi::Reservation>), abi::Error> {
+        let user_id = str_to_option(&filter.user_id);
+        let resource_id = str_to_option(&filter.resource_id);
+        let status = abi::ReservationStatus::from_i32(filter.status)
+            .unwrap_or(abi::ReservationStatus::Pending);
+        let page_size = if filter.page_size < 10 || filter.page_size > 100 {
+            10
+        } else {
+            filter.page_size
+        };
+        let rsvps: Vec<abi::Reservation> = sqlx::query_as(
+            "SELECT * FROM rsvp.filter($1, $2, $3::rsvp.reservation_status, $4, $5, $6)",
+        )
+        .bind(user_id)
+        .bind(resource_id)
+        .bind(status.to_string())
+        .bind(filter.cursor)
+        .bind(filter.desc)
+        .bind(page_size)
+        .fetch_all(&self.pool)
+        .await?;
+
+        // if the first id is current cursor, then we have prev, we start from 1
+        // if (len - start) > page_size, then we have next, we end at len - 1
+        let has_prev = !rsvps.is_empty() && rsvps[0].id == filter.cursor;
+        // let start = if has_prev { 1 } else { 0 }; ==> usize::from(has_prev)
+        let start = usize::from(has_prev);
+        let has_next = (rsvps.len() - start) as i32 > page_size;
+        let end = if has_next {
+            rsvps.len() - 1
+        } else {
+            rsvps.len()
+        };
+        let prev = if has_prev { rsvps[start - 1].id } else { -1 };
+        let next = if has_next { rsvps[end - 1].id } else { -1 };
+
+        // TODO: optimize this clone
+        let result = rsvps[start..end].to_vec();
+
+        let pager = FilterPager {
+            prev,
+            next,
+            // TODO: how to get total efficiently?
+            total: 0,
+        };
+        Ok((pager, result))
+    }
 }
 
 fn str_to_option(s: &str) -> Option<&str> {
@@ -140,8 +192,8 @@ fn str_to_option(s: &str) -> Option<&str> {
 #[cfg(test)]
 mod tests {
     use abi::{
-        Reservation, ReservationConflict, ReservationConflictInfo, ReservationQueryBuilder,
-        ReservationStatus, ReservationWindow,
+        Reservation, ReservationConflict, ReservationConflictInfo, ReservationFilterBuilder,
+        ReservationQueryBuilder, ReservationStatus, ReservationWindow,
     };
     use prost_types::Timestamp;
     use sqlx::PgPool;
@@ -284,6 +336,27 @@ mod tests {
         assert_eq!(rsvps[0], rsvp);
     }
 
+    #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
+    async fn filter_reservations_should_work() {
+        let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
+        assert!(rsvp.id != 0);
+
+        let filter = ReservationFilterBuilder::default()
+            .user_id("user_id_1")
+            .resource_id("ocean-view-room-713")
+            .status(ReservationStatus::Pending)
+            .build()
+            .unwrap();
+
+        let (pager, rsvps) = manager.filter(filter).await.unwrap();
+        assert_eq!(pager.next, -1);
+        assert_eq!(pager.prev, -1);
+        assert_eq!(rsvps.len(), 1);
+        assert_eq!(rsvps[0], rsvp);
+    }
+
+    //===================================================================================================================
+    // private none test function
     async fn make_user_one_reservation(pool: PgPool) -> (Reservation, ReservationManager) {
         make_reservation(
             pool,
