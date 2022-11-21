@@ -14,6 +14,8 @@ sqlx = { version = "0.6.2", features = ["runtime-tokio-rustls", "postgres", "chr
 thiserror = "1.0.37"
 regex = "1.5"
 derive_builder = "0.11.2"
+serde = { version = "1.0.147", features = ["derive"] }
+serde_yaml = "0.9.14"
 
 [build-dependencies]
 tonic-build = "0.8.2"

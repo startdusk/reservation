@@ -1,8 +1,10 @@
+mod config;
 mod error;
 mod pb;
 mod types;
 mod utils;
 
+pub use config::*;
 pub use utils::*;
 
 pub use error::{Error, ReservationConflict, ReservationConflictInfo, ReservationWindow};
