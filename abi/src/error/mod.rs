@@ -79,10 +79,10 @@ impl From<Error> for tonic::Status {
         match e {
             Error::DbError(e) => tonic::Status::internal(format!("Database error: {}", e)),
             Error::ConfigReadError => {
-                tonic::Status::internal(format!("Failed to read configuration file"))
+                tonic::Status::internal("Failed to read configuration file".to_string())
             }
             Error::ConfigParseError => {
-                tonic::Status::internal(format!("Failed to parse configuration file"))
+                tonic::Status::internal("Failed to parse configuration file".to_string())
             }
             Error::InvalidTime => {
                 tonic::Status::invalid_argument("Invalid start or end time for the reservation")

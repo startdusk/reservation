@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
     let config = Config::load(&filename)?;
     dbg!(&config);
     let addr = format!("{}:{}", config.server.host, config.server.port).parse()?;
-    let svc = RsvpService::from_config(config).await?;
+    let svc = RsvpService::from_config(&config).await?;
     let svc = ReservationServiceServer::new(svc);
     Server::builder().add_service(svc).serve(addr).await?;
     Ok(())

@@ -35,23 +35,23 @@ pub struct ServerConfig {
 impl Config {
     pub fn load(filename: &str) -> Result<Self, Error> {
         let config = fs::read_to_string(filename).map_err(|_| Error::ConfigReadError)?;
-        Ok(serde_yaml::from_str(&config).map_err(|_| Error::ConfigParseError)?)
+        serde_yaml::from_str(&config).map_err(|_| Error::ConfigParseError)
     }
 }
 
 impl DbConfig {
-    pub fn url(&self) -> String {
+    pub fn server_url(&self) -> String {
         if self.password.is_empty() {
-            format!(
-                "postgres://{}@{}:{}/{}",
-                self.user, self.host, self.port, self.dbname,
-            )
+            format!("postgres://{}@{}:{}", self.user, self.host, self.port)
         } else {
             format!(
-                "postgres://{}:{}@{}:{}/{}",
-                self.user, self.password, self.host, self.port, self.dbname,
+                "postgres://{}:{}@{}:{}",
+                self.user, self.password, self.host, self.port
             )
         }
+    }
+    pub fn url(&self) -> String {
+        format!("{}/{}", self.server_url(), self.dbname)
     }
 }
 
