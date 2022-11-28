@@ -90,12 +90,12 @@ impl ReservationService for RsvpService {
 mod tests {
     use super::*;
 
-    use abi::{DbConfig, Reservation, ServerConfig};
-    use helper::*;
+    use abi::{DbConfig, Reservation};
+    use docker_tester::TestPostgres;
 
     #[tokio::test]
     async fn rpc_reserve_should_work() {
-        let test_app = TestApp::new().await.unwrap();
+        let test_app = TestPostgres::new("../migrations").await.unwrap();
         let config = Config {
             db: DbConfig {
                 host: test_app.host.clone(),
@@ -105,10 +105,7 @@ mod tests {
                 dbname: test_app.dbname.clone(),
                 max_connections: 5,
             },
-            server: ServerConfig {
-                host: "0.0.0.0".to_string(),
-                port: 50001,
-            },
+            ..Default::default()
         };
         let service = RsvpService::from_config(&config).await.unwrap();
         let reservation = Reservation::new_pending(
@@ -132,105 +129,5 @@ mod tests {
         assert_eq!(insert_reservation.start, reservation.start);
         assert_eq!(insert_reservation.end, reservation.end);
         assert_eq!(insert_reservation.note, reservation.note);
-    }
-
-    mod helper {
-        use docker_tester::{start_container, stop_container};
-        use sqlx::{Connection, Executor, PgConnection, PgPool};
-        use std::{rc::Rc, thread, time};
-        use uuid::Uuid;
-
-        pub struct TestApp {
-            pub host: String,
-            pub port: u16,
-            pub user: String,
-            pub password: String,
-            pub dbname: String,
-            pub container_id: String,
-        }
-
-        impl TestApp {
-            pub async fn new() -> Result<Self, anyhow::Error> {
-                // config databse
-                let dbname = Rc::new(Uuid::new_v4().to_string());
-                let image = "postgres:14-alpine";
-                let port = "5432";
-                let args = &[
-                    "-e",
-                    "POSTGRES_USER=postgres",
-                    "-e",
-                    "POSTGRES_PASSWORD=password",
-                ];
-                let container =
-                    start_container(image, port, args).expect("Failed to start Postgres container");
-                let test_app = Self {
-                    dbname: dbname.clone().to_string(),
-                    container_id: container.id,
-                    host: container.host,
-                    port: container.port,
-                    user: "postgres".to_string(),
-                    password: "password".to_string(),
-                };
-                for i in 1..=10 {
-                    match PgConnection::connect(&test_app.server_url()).await {
-                        Ok(conn) => {
-                            conn.close().await?;
-                            println!("Postgres is ready to go");
-                            break;
-                        }
-                        Err(err) => {
-                            if i == 10 {
-                                return Err(anyhow::anyhow!(err));
-                            }
-                            println!("Postgres is not ready");
-                            let ten_millis = time::Duration::from_secs(i);
-                            thread::sleep(ten_millis);
-                        }
-                    }
-                }
-                let mut conn = PgConnection::connect(&test_app.server_url())
-                    .await
-                    .expect("Cannot connect to Postgres");
-
-                conn.execute(format!(r#"CREATE DATABASE "{}";"#, dbname.clone()).as_str())
-                    .await
-                    .expect("Failed to create database");
-
-                // Migrate database
-                let db_pool = PgPool::connect(&test_app.url())
-                    .await
-                    .expect("Failed to connect to Postgres with db");
-
-                sqlx::migrate!("../migrations")
-                    .run(&db_pool)
-                    .await
-                    .expect("Failed to migrate the database");
-
-                db_pool.close().await;
-
-                Ok(test_app)
-            }
-
-            pub fn server_url(&self) -> String {
-                if self.password.is_empty() {
-                    format!("postgres://{}@{}:{}", self.user, self.host, self.port)
-                } else {
-                    format!(
-                        "postgres://{}:{}@{}:{}",
-                        self.user, self.password, self.host, self.port
-                    )
-                }
-            }
-            pub fn url(&self) -> String {
-                format!("{}/{}", self.server_url(), self.dbname)
-            }
-        }
-
-        impl Drop for TestApp {
-            fn drop(&mut self) {
-                stop_container(self.container_id.clone())
-                    .expect("Failed to stop Postgres container");
-            }
-        }
     }
 }

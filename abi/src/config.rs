@@ -4,13 +4,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::Error;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {
     pub db: DbConfig,
     pub server: ServerConfig,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DbConfig {
     pub host: String,
     pub port: u16,
@@ -26,7 +26,7 @@ fn default_pool_size() -> u32 {
     5
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ServerConfig {
     pub host: String,
     pub port: u16,

@@ -18,5 +18,4 @@ tonic = { version = "0.8.2", features = ["tokio-rustls", "gzip"] }
 
 [dev-dependencies]
 docker_tester = "0"
-sqlx = { version = "0.6.2", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid"] }
-uuid = { version = "1", features = ["v4", "serde"] }
+
