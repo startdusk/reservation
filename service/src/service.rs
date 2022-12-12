@@ -155,7 +155,7 @@ mod tests {
         let config = Config {
             db: DbConfig {
                 host: test_app.host.clone(),
-                port: test_app.port.clone(),
+                port: test_app.port,
                 user: test_app.user.clone(),
                 password: test_app.password.clone(),
                 dbname: test_app.dbname.clone(),

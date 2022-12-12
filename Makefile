@@ -19,4 +19,4 @@ test: fmt
 
 .PHONY: fmt
 fmt:
-	@cargo clippy
+	@cargo clippy --all-targets --all-features --tests --benches -- -D warnings

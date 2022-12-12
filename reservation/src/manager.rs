@@ -309,7 +309,7 @@ mod tests {
     #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
     async fn get_reservation_should_work() {
         let (new_rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
-        let get_rsvp = manager.get(new_rsvp.id.clone()).await.unwrap();
+        let get_rsvp = manager.get(new_rsvp.id).await.unwrap();
         assert_eq!(new_rsvp, get_rsvp);
     }
 
