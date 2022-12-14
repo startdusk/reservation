@@ -3,7 +3,8 @@ use prost_types::Timestamp;
 
 pub fn convert_to_utc_time(ts: Timestamp) -> DateTime<Utc> {
     DateTime::<Utc>::from_utc(
-        NaiveDateTime::from_timestamp(ts.seconds, ts.nanos as _),
+        NaiveDateTime::from_timestamp_opt(ts.seconds, ts.nanos as _)
+            .expect("from timestampe opt failed"),
         Utc,
     )
 }

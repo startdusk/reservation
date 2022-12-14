@@ -1,5 +1,6 @@
 /// Core reservation object. Contains all the information for a reservation
 /// if ListenResponse op is DELETE, only id will be populated
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Reservation {
     /// unique id for the reservation, if put into ReservationRequest, id should be empty
@@ -25,18 +26,21 @@ pub struct Reservation {
     pub note: ::prost::alloc::string::String,
 }
 /// To make a reservation, send a ReservationRequest with Reservation object (id should be empty)
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReserveRequest {
     #[prost(message, optional, tag = "1")]
     pub reservation: ::core::option::Option<Reservation>,
 }
 /// Created reservation will be returned in ReserveResponse
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReserveResponse {
     #[prost(message, optional, tag = "1")]
     pub reservation: ::core::option::Option<Reservation>,
 }
 /// To update a reservation, send an UpdateRequest. Only note is updatable
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateRequest {
     #[prost(int64, tag = "1")]
@@ -45,49 +49,58 @@ pub struct UpdateRequest {
     pub note: ::prost::alloc::string::String,
 }
 /// Updated reservation will be returned in UpdateResponse
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateResponse {
     #[prost(message, optional, tag = "1")]
     pub reservation: ::core::option::Option<Reservation>,
 }
 /// To change a reservation from pending to confirmed, send a ConfirmRequest
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ConfirmRequest {
     #[prost(int64, tag = "1")]
     pub id: i64,
 }
 /// Confirmed reservation will be returned in ConfirmResponse
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ConfirmResponse {
     #[prost(message, optional, tag = "1")]
     pub reservation: ::core::option::Option<Reservation>,
 }
 /// To cancel a reservation, send a CancelRequest
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CancelRequest {
     #[prost(int64, tag = "1")]
     pub id: i64,
 }
 /// Cancel reservation will be returned in CancelResponse
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CancelResponse {
     #[prost(message, optional, tag = "1")]
     pub reservation: ::core::option::Option<Reservation>,
 }
 /// To get a reservation, send a GetRequest
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetRequest {
     #[prost(int64, tag = "1")]
     pub id: i64,
 }
 /// Get reservation will be returned in GetResponse
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetResponse {
     #[prost(message, optional, tag = "1")]
     pub reservation: ::core::option::Option<Reservation>,
 }
 /// Query reservation with user id, resource id, start time, end time, and status
-#[derive(derive_builder::Builder, Clone, PartialEq, ::prost::Message)]
+#[derive(derive_builder::Builder)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReservationQuery {
     /// resource if for the reservation query. If empty, query all resources
     #[prost(string, tag = "1")]
@@ -103,33 +116,36 @@ pub struct ReservationQuery {
     pub status: i32,
     /// start time for the reservation query, if 0, use Infinty for start time
     #[prost(message, optional, tag = "4")]
-    #[builder(setter(into, strip_option))]
+    #[builder(setter(into, strip_option), default)]
     pub start: ::core::option::Option<::prost_types::Timestamp>,
     /// end time for the reservation query, if 0, use Infinty for end time
     #[prost(message, optional, tag = "5")]
-    #[builder(setter(into, strip_option))]
+    #[builder(setter(into, strip_option), default)]
     pub end: ::core::option::Option<::prost_types::Timestamp>,
     /// current page for the query
     #[prost(int32, tag = "6")]
     #[builder(setter(into), default)]
     pub page: i32,
     /// page size for the query
-    #[prost(int32, tag = "7")]
-    #[builder(setter(into), default)]
-    pub page_size: i32,
+    #[prost(int64, tag = "7")]
+    #[builder(setter(into), default = "10")]
+    pub page_size: i64,
     /// sort direction
     #[prost(bool, tag = "8")]
     #[builder(setter(into), default)]
     pub desc: bool,
 }
 /// To query reservation, send a QueryRequest
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryRequest {
     #[prost(message, optional, tag = "1")]
     pub query: ::core::option::Option<ReservationQuery>,
 }
 /// To query reservations, order by reservatoin id
-#[derive(derive_builder::Builder, Clone, PartialEq, ::prost::Message)]
+#[derive(derive_builder::Builder)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReservationFilter {
     /// resource if for the reservation query. If empty, query all resources
     #[prost(string, tag = "1")]
@@ -145,24 +161,26 @@ pub struct ReservationFilter {
     pub status: i32,
     /// cursor
     #[prost(int64, tag = "4")]
-    #[builder(setter(into), default)]
+    #[builder(setter(into, strip_option), default)]
     pub cursor: i64,
     /// page size for the query
-    #[prost(int32, tag = "5")]
-    #[builder(setter(into), default)]
-    pub page_size: i32,
+    #[prost(int64, tag = "5")]
+    #[builder(setter(into), default = "10")]
+    pub page_size: i64,
     /// sort direction
     #[prost(bool, tag = "6")]
     #[builder(setter(into), default)]
     pub desc: bool,
 }
 /// To query reservations, send a FilterRequest
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FilterRequest {
     #[prost(message, optional, tag = "1")]
     pub filter: ::core::option::Option<ReservationFilter>,
 }
 /// filter pager info
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FilterPager {
     #[prost(int64, tag = "1")]
@@ -172,6 +190,7 @@ pub struct FilterPager {
     #[prost(int64, tag = "3")]
     pub total: i64,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FilterResponse {
     #[prost(message, repeated, tag = "1")]
@@ -180,9 +199,11 @@ pub struct FilterResponse {
     pub pager: ::core::option::Option<FilterPager>,
 }
 /// Client can listen to reservation updates by sending a ListenRequest
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ListenRequest {}
 /// Server will send ListenResponse to client in streaming response
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ListenResponse {
     /// update type
@@ -448,7 +469,7 @@ pub mod reservation_service_client {
 pub mod reservation_service_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
-    ///Generated trait containing gRPC methods that should be implemented for use with ReservationServiceServer.
+    /// Generated trait containing gRPC methods that should be implemented for use with ReservationServiceServer.
     #[async_trait]
     pub trait ReservationService: Send + Sync + 'static {
         /// make a reservation
@@ -476,7 +497,7 @@ pub mod reservation_service_server {
             &self,
             request: tonic::Request<super::GetRequest>,
         ) -> Result<tonic::Response<super::GetResponse>, tonic::Status>;
-        ///Server streaming response type for the query method.
+        /// Server streaming response type for the query method.
         type queryStream: futures_core::Stream<Item = Result<super::Reservation, tonic::Status>>
             + Send
             + 'static;
@@ -490,7 +511,7 @@ pub mod reservation_service_server {
             &self,
             request: tonic::Request<super::FilterRequest>,
         ) -> Result<tonic::Response<super::FilterResponse>, tonic::Status>;
-        ///Server streaming response type for the listen method.
+        /// Server streaming response type for the listen method.
         type listenStream: futures_core::Stream<Item = Result<super::Reservation, tonic::Status>>
             + Send
             + 'static;

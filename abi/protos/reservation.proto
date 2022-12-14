@@ -106,7 +106,7 @@ message ReservationQuery {
     // current page for the query
     int32 page = 6;
     // page size for the query
-    int32 page_size = 7;
+    int64 page_size = 7;
     // sort direction
     bool desc = 8;
 }
@@ -127,7 +127,7 @@ message ReservationFilter {
     // cursor
     int64 cursor = 4;
     // page size for the query
-    int32 page_size = 5;
+    int64 page_size = 5;
     // sort direction
     bool desc = 6;
 }

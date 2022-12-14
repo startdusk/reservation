@@ -1,9 +1,8 @@
 use std::path::Path;
 
-use abi::{reservation_service_server::ReservationServiceServer, Config};
+use abi::Config;
 use anyhow::Result;
-use reservation_service::RsvpService;
-use tonic::transport::Server;
+use reservation_service::start_server;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -23,11 +22,8 @@ async fn main() -> Result<()> {
         }
     });
 
-    let config = Config::load(&filename)?;
-    dbg!(&config);
-    let addr = format!("{}:{}", config.server.host, config.server.port).parse()?;
-    let svc = RsvpService::from_config(&config).await?;
-    let svc = ReservationServiceServer::new(svc);
-    Server::builder().add_service(svc).serve(addr).await?;
+    let config = Config::load(filename)?;
+    start_server(&config).await?;
+
     Ok(())
 }
