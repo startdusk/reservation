@@ -229,20 +229,25 @@ mod tests {
         Reservation, ReservationConflict, ReservationConflictInfo, ReservationFilterBuilder,
         ReservationQueryBuilder, ReservationStatus, ReservationWindow,
     };
+    use docker_tester::TestPostgres;
     use prost_types::Timestamp;
     use sqlx::PgPool;
 
     use super::*;
 
-    #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
+    #[tokio::test]
     async fn reserve_should_work_for_valid_window() {
-        let (rsvp, _) = make_user_one_reservation(migrated_pool.clone()).await;
+        let test_postgres = TestPostgres::new("../migrations").await.unwrap();
+        let pool = test_postgres.get_pool().await;
+        let (rsvp, _) = make_user_one_reservation(pool).await;
         assert!(rsvp.id != 0);
     }
 
-    #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
+    #[tokio::test]
     async fn reserve_conflict_reservation_should_reject() {
-        let manager = ReservationManager::new(migrated_pool.clone());
+        let test_postgres = TestPostgres::new("../migrations").await.unwrap();
+        let pool = test_postgres.get_pool().await;
+        let manager = ReservationManager::new(pool);
         let rsvp1 = abi::Reservation::new_pending(
             "user_id_1",
             "ocean-view-room-713",
@@ -276,18 +281,22 @@ mod tests {
         assert_eq!(err, abi::Error::ConflictReservation(info));
     }
 
-    #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
+    #[tokio::test]
     async fn reserve_change_status_should_work() {
-        let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
+        let test_postgres = TestPostgres::new("../migrations").await.unwrap();
+        let pool = test_postgres.get_pool().await;
+        let (rsvp, manager) = make_user_one_reservation(pool).await;
         assert!(rsvp.id != 0);
 
         let rsvp = manager.change_status(rsvp.id).await.unwrap();
         assert_eq!(rsvp.status, abi::ReservationStatus::Confirmed as i32);
     }
 
-    #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
+    #[tokio::test]
     async fn reserve_change_status_not_pending_should_do_nothing() {
-        let (rsvp, manager) = make_user_two_reservation(migrated_pool.clone()).await;
+        let test_postgres = TestPostgres::new("../migrations").await.unwrap();
+        let pool = test_postgres.get_pool().await;
+        let (rsvp, manager) = make_user_two_reservation(pool).await;
         assert!(rsvp.id != 0);
 
         let rsvp = manager.change_status(rsvp.id).await.unwrap();
@@ -296,9 +305,11 @@ mod tests {
         assert_eq!(err, abi::Error::NotFound);
     }
 
-    #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
+    #[tokio::test]
     async fn update_note_should_work() {
-        let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
+        let test_postgres = TestPostgres::new("../migrations").await.unwrap();
+        let pool = test_postgres.get_pool().await;
+        let (rsvp, manager) = make_user_one_reservation(pool).await;
         let rsvp = manager
             .update_note(rsvp.id, "hello world".into())
             .await
@@ -306,24 +317,30 @@ mod tests {
         assert_eq!(rsvp.note, "hello world");
     }
 
-    #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
+    #[tokio::test]
     async fn get_reservation_should_work() {
-        let (new_rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
+        let test_postgres = TestPostgres::new("../migrations").await.unwrap();
+        let pool = test_postgres.get_pool().await;
+        let (new_rsvp, manager) = make_user_one_reservation(pool).await;
         let get_rsvp = manager.get(new_rsvp.id).await.unwrap();
         assert_eq!(new_rsvp, get_rsvp);
     }
 
-    #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
+    #[tokio::test]
     async fn delete_reservation_should_work() {
-        let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
+        let test_postgres = TestPostgres::new("../migrations").await.unwrap();
+        let pool = test_postgres.get_pool().await;
+        let (rsvp, manager) = make_user_one_reservation(pool).await;
         manager.delete(rsvp.id).await.unwrap();
         let err = manager.get(rsvp.id).await.unwrap_err();
         assert_eq!(err, abi::Error::NotFound);
     }
 
-    #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
+    #[tokio::test]
     async fn query_reservations_should_work() {
-        let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
+        let test_postgres = TestPostgres::new("../migrations").await.unwrap();
+        let pool = test_postgres.get_pool().await;
+        let (rsvp, manager) = make_user_one_reservation(pool).await;
         assert!(rsvp.id != 0);
 
         let query = ReservationQueryBuilder::default()
@@ -370,9 +387,11 @@ mod tests {
         assert_eq!(rx.recv().await, None);
     }
 
-    #[sqlx_database_tester::test(pool(variable = "migrated_pool", migrations = "../migrations"))]
+    #[tokio::test]
     async fn filter_reservations_should_work() {
-        let (rsvp, manager) = make_user_one_reservation(migrated_pool.clone()).await;
+        let test_postgres = TestPostgres::new("../migrations").await.unwrap();
+        let pool = test_postgres.get_pool().await;
+        let (rsvp, manager) = make_user_one_reservation(pool).await;
         assert!(rsvp.id != 0);
 
         let filter = ReservationFilterBuilder::default()
