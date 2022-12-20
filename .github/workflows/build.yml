@@ -18,8 +18,8 @@ jobs:
           fetch-depth: 0
       - name: Setup protoc
         uses: arduino/setup-protoc@v1.1.2
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@1.0.11
+      # - name: setup-docker
+      #   uses: docker-practice/actions-setup-docker@1.0.11
       - name: Install Rust
         run: rustup toolchain install stable --component llvm-tools-preview
       - name: Install cargo-llvm-cov
