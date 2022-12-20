@@ -122,16 +122,12 @@ pub struct ReservationQuery {
     #[prost(message, optional, tag = "5")]
     #[builder(setter(into, strip_option), default)]
     pub end: ::core::option::Option<::prost_types::Timestamp>,
-    /// current page for the query
-    #[prost(int32, tag = "6")]
-    #[builder(setter(into), default)]
-    pub page: i32,
-    /// page size for the query
-    #[prost(int64, tag = "7")]
-    #[builder(setter(into), default = "10")]
-    pub page_size: i64,
+    /// // current page for the query
+    /// int32 page = 6;
+    /// // page size for the query
+    /// int64 page_size = 7;
     /// sort direction
-    #[prost(bool, tag = "8")]
+    #[prost(bool, tag = "6")]
     #[builder(setter(into), default)]
     pub desc: bool,
 }

@@ -1,4 +1,4 @@
-use abi::{FilterPager, Validator};
+use abi::{convert_to_utc_time, FilterPager, Validator};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::Row;
@@ -113,22 +113,22 @@ impl Rsvp for ReservationManager {
     ) -> mpsc::Receiver<Result<abi::Reservation, abi::Error>> {
         let user_id = string_to_option(&query.user_id);
         let resource_id = string_to_option(&query.resource_id);
-        let range: PgRange<DateTime<Utc>> = query.get_timespan();
+        let start = query.start.map(convert_to_utc_time);
+        let end = query.end.map(convert_to_utc_time);
         let status = abi::ReservationStatus::from_i32(query.status)
             .unwrap_or(abi::ReservationStatus::Pending);
         let pool = self.pool.clone();
         let (tx, rx) = mpsc::channel(128);
         tokio::spawn(async move {
             let mut rsvps = sqlx::query_as(
-                "SELECT * FROM rsvp.query($1, $2, $3, $4::rsvp.reservation_status, $5, $6, $7)",
+                "SELECT * FROM rsvp.query($1, $2, $3, $4, $5::rsvp.reservation_status, $6)",
             )
             .bind(user_id)
             .bind(resource_id)
-            .bind(range)
+            .bind(start)
+            .bind(end)
             .bind(status.to_string())
-            .bind(query.page)
             .bind(query.desc)
-            .bind(query.page_size)
             .fetch_many(&pool);
 
             while let Some(ret) = rsvps.next().await {
