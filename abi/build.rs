@@ -25,7 +25,7 @@ fn main() {
         .with_type_attributes(
             &[
                 "reservation.ReservationFilter",
-                "reservation.ReservationQuery",
+                // "reservation.ReservationQuery",
             ],
             &[r#"#[builder(build_fn(name = "private_build"))]"#],
         )

@@ -99,7 +99,6 @@ pub struct GetResponse {
 }
 /// Query reservation with user id, resource id, start time, end time, and status
 #[derive(derive_builder::Builder)]
-#[builder(build_fn(name = "private_build"))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReservationQuery {

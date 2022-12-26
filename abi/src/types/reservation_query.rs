@@ -1,19 +1,19 @@
 use chrono::{DateTime, Utc};
 use sqlx::postgres::types::PgRange;
 
-use crate::{Error, Normalizer, ReservationQuery, ReservationQueryBuilder, Validator};
+use crate::{Error, ReservationQuery, Validator};
 
 use super::{get_timespan, validate_range};
 
-impl ReservationQueryBuilder {
-    pub fn build(&self) -> Result<ReservationQuery, Error> {
-        let mut query = self
-            .private_build()
-            .expect("failed to build ReservationFilter");
-        query.normalize()?;
-        Ok(query)
-    }
-}
+// impl ReservationQueryBuilder {
+//     pub fn build(&self) -> Result<ReservationQuery, Error> {
+//         let mut query = self
+//             .private_build()
+//             .expect("failed to build ReservationFilter");
+//         query.normalize()?;
+//         Ok(query)
+//     }
+// }
 
 impl ReservationQuery {
     pub fn get_timespan(&self) -> PgRange<DateTime<Utc>> {
@@ -28,8 +28,8 @@ impl Validator for ReservationQuery {
     }
 }
 
-impl Normalizer for ReservationQuery {
-    fn do_normalize(&mut self) {
-        // do noting
-    }
-}
+// impl Normalizer for ReservationQuery {
+//     fn do_normalize(&mut self) {
+//         // do noting
+//     }
+// }
