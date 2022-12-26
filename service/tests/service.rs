@@ -106,8 +106,8 @@ async fn grpc_filter_should_work() {
 
     let pager = pager.unwrap();
     // assert_eq!(pager.total, 100) // no implemented yet
-    assert_eq!(pager.prev, -1);
-    // assert_eq!(pager.next, filter.page_size + 1 + 1); // we alreay had an item
+    assert_eq!(pager.prev, None);
+    assert_eq!(pager.next, Some(filter.page_size + 1)); // we alreay had an item
 
     assert_eq!(reservations.len(), filter.page_size as usize);
 

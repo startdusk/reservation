@@ -99,6 +99,7 @@ pub struct GetResponse {
 }
 /// Query reservation with user id, resource id, start time, end time, and status
 #[derive(derive_builder::Builder)]
+#[builder(build_fn(name = "private_build"))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReservationQuery {
@@ -122,10 +123,6 @@ pub struct ReservationQuery {
     #[prost(message, optional, tag = "5")]
     #[builder(setter(into, strip_option), default)]
     pub end: ::core::option::Option<::prost_types::Timestamp>,
-    /// // current page for the query
-    /// int32 page = 6;
-    /// // page size for the query
-    /// int64 page_size = 7;
     /// sort direction
     #[prost(bool, tag = "6")]
     #[builder(setter(into), default)]
@@ -140,6 +137,7 @@ pub struct QueryRequest {
 }
 /// To query reservations, order by reservatoin id
 #[derive(derive_builder::Builder)]
+#[builder(build_fn(name = "private_build"))]
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReservationFilter {
@@ -156,9 +154,9 @@ pub struct ReservationFilter {
     #[builder(setter(into), default)]
     pub status: i32,
     /// cursor
-    #[prost(int64, tag = "4")]
+    #[prost(int64, optional, tag = "4")]
     #[builder(setter(into, strip_option), default)]
-    pub cursor: i64,
+    pub cursor: ::core::option::Option<i64>,
     /// page size for the query
     #[prost(int64, tag = "5")]
     #[builder(setter(into), default = "10")]
@@ -179,12 +177,12 @@ pub struct FilterRequest {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FilterPager {
-    #[prost(int64, tag = "1")]
-    pub prev: i64,
-    #[prost(int64, tag = "2")]
-    pub next: i64,
-    #[prost(int64, tag = "3")]
-    pub total: i64,
+    #[prost(int64, optional, tag = "1")]
+    pub prev: ::core::option::Option<i64>,
+    #[prost(int64, optional, tag = "2")]
+    pub next: ::core::option::Option<i64>,
+    #[prost(int64, optional, tag = "3")]
+    pub total: ::core::option::Option<i64>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

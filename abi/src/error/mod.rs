@@ -1,11 +1,10 @@
 mod conflict;
 
 use sqlx::postgres::PgDatabaseError;
-use thiserror::Error;
 
 pub use conflict::{ReservationConflict, ReservationConflictInfo, ReservationWindow};
 
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Database error")]
     DbError(sqlx::Error),
@@ -33,6 +32,15 @@ pub enum Error {
 
     #[error("Invalid resource id: {0}")]
     InvalidResourceId(String),
+
+    #[error("Invalid page size: {0}")]
+    InvalidPageSize(i64),
+
+    #[error("Invalid cursor: {0}")]
+    InvalidCursor(i64),
+
+    #[error("Invalid status: {0}")]
+    InvalidStatus(i32),
 
     #[error("Unknown error")]
     Unknown,
@@ -77,29 +85,22 @@ impl From<sqlx::Error> for Error {
 impl From<Error> for tonic::Status {
     fn from(e: Error) -> Self {
         match e {
-            Error::DbError(e) => tonic::Status::internal(format!("Database error: {}", e)),
-            Error::ConfigReadError => {
-                tonic::Status::internal("Failed to read configuration file".to_string())
+            Error::DbError(_) | Error::ConfigReadError | Error::ConfigParseError => {
+                tonic::Status::internal(e.to_string())
             }
-            Error::ConfigParseError => {
-                tonic::Status::internal("Failed to parse configuration file".to_string())
-            }
-            Error::InvalidTime => {
-                tonic::Status::invalid_argument("Invalid start or end time for the reservation")
-            }
+
+            Error::InvalidTime
+            | Error::InvalidReservationId(_)
+            | Error::InvalidUserId(_)
+            | Error::InvalidResourceId(_)
+            | Error::InvalidPageSize(_)
+            | Error::InvalidCursor(_)
+            | Error::InvalidStatus(_) => tonic::Status::invalid_argument(e.to_string()),
+
             Error::ConflictReservation(info) => {
                 tonic::Status::failed_precondition(format!("Conflict reservation: {}", info))
             }
             Error::NotFound => tonic::Status::not_found("No reservation found by given condition"),
-            Error::InvalidReservationId(id) => {
-                tonic::Status::invalid_argument(format!("Invalid reservation id: {}", id))
-            }
-            Error::InvalidUserId(user_id) => {
-                tonic::Status::invalid_argument(format!("Invalid user id: {}", user_id))
-            }
-            Error::InvalidResourceId(resource_id) => {
-                tonic::Status::invalid_argument(format!("Invalid resource id: {}", resource_id))
-            }
             Error::Unknown => tonic::Status::unknown("unknown error"),
         }
     }
