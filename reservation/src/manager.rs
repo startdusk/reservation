@@ -164,7 +164,7 @@ impl Rsvp for ReservationManager {
         let sql = filter.to_sql()?;
         let rsvps: Vec<abi::Reservation> = sqlx::query_as(&sql).fetch_all(&self.pool).await?;
         let mut data = rsvps.into_iter().collect();
-        let pager = filter.get_pager(&mut data)?;
+        let pager = filter.get_pager(&mut data);
         Ok((pager, data.into_iter().collect()))
     }
 }
