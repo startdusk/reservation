@@ -145,7 +145,7 @@ message ReservationFilter {
     // use status to filter result. If UNKNOWN, return all reservations
     ReservationStatus status = 3;
     // cursor
-    int64 cursor = 4;
+    optional int64 cursor = 4;
     // page size for the query
     int64 page_size = 5;
     // sort direction
@@ -159,9 +159,9 @@ message FilterRequest {
 
 // filter pager info
 message FilterPager {
-    int64 prev = 1;
-    int64 next = 2;
-    int64 total = 3;
+    optional int64 prev = 1;
+    optional int64 next = 2;
+    optional int64 total = 3;
 }
 
 message FilterResponse {
