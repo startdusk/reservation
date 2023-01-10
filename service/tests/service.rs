@@ -163,21 +163,29 @@ async fn get_test_client(test_app: &TestPostgres, port: u16) -> ReservationServi
             port,
         },
     };
-    setup_server(&config).await;
+    setup_server(&config);
 
-    ReservationServiceClient::connect(config.server.url(false))
-        .await
-        .unwrap()
+    let fut = async move {
+        // if error on conn keep retry until timeout
+        while ReservationServiceClient::connect(config.server.url(false))
+            .await
+            .is_err()
+        {
+            time::sleep(Duration::from_millis(10)).await
+        }
+        ReservationServiceClient::connect(config.server.url(false))
+            .await
+            .unwrap()
+    };
+
+    time::timeout(Duration::from_secs(5), fut).await.unwrap()
 }
 
-async fn setup_server(config: &Config) {
+fn setup_server(config: &Config) {
     let config_cloned = config.clone();
     tokio::spawn(async move {
         start_server(&config_cloned).await.unwrap();
     });
-
-    // wait for server started
-    time::sleep(Duration::from_millis(1000)).await;
 }
 
 async fn make_reservations(

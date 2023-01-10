@@ -102,38 +102,29 @@ impl ReservationFilter {
 }
 
 impl ToSql for ReservationFilter {
-    fn to_sql(&self) -> Result<String, Error> {
+    fn to_sql(&self) -> String {
         let middle_plus = if self.cursor.is_none() { 0 } else { 1 };
-
-        let mut sql = format!(
-            "SELECT * FROM rsvp.reservations WHERE status = '{}'::rsvp.reservation_status AND ",
-            self.get_status()
-        );
-        if self.desc {
-            sql.push_str(&format!("id <= {} AND ", self.get_cursor()));
+        let limit = self.page_size + 1 + middle_plus;
+        let status = self.get_status();
+        let cursor_cond = if self.desc {
+            format!("id <= {}", self.get_cursor())
         } else {
-            sql.push_str(&format!("id >= {} AND ", self.get_cursor()));
-        }
+            format!("id >= {}", self.get_cursor())
+        };
 
-        if self.user_id.is_empty() && self.resource_id.is_empty() {
-            sql.push_str("TRUE");
-        } else if self.user_id.is_empty() {
-            sql.push_str(&format!("resource_id = '{}'", self.resource_id));
-        } else if self.resource_id.is_empty() {
-            sql.push_str(&format!("user_id = '{}'", self.user_id));
-        } else {
-            sql.push_str(&format!(
+        let user_resource_cond = match (self.user_id.is_empty(), self.resource_id.is_empty()) {
+            (true, true) => "TRUE".into(),
+            (true, false) => format!("resource_id = '{}'", self.resource_id),
+            (false, true) => format!("user_id = '{}'", self.user_id),
+            (false, false) => format!(
                 "user_id = '{}' AND resource_id = '{}'",
                 self.user_id, self.resource_id
-            ));
-        }
+            ),
+        };
 
-        sql.push_str(&format!(
-            " ORDER BY id {} LIMIT {}",
-            if self.desc { "DESC" } else { "ASC" },
-            self.page_size + 1 + middle_plus
-        ));
-        Ok(sql)
+        let direction = if self.desc { "DESC" } else { "ASC" };
+        format!("SELECT * FROM rsvp.reservations WHERE status = '{}'::rsvp.reservation_status AND {} AND {} ORDER BY id {} LIMIT {}",
+             status, cursor_cond, user_resource_cond, direction, limit)
     }
 }
 
@@ -150,7 +141,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let sql = filter.to_sql().unwrap();
+        let sql = filter.to_sql();
         assert_eq!(sql, "SELECT * FROM rsvp.reservations WHERE status = 'pending'::rsvp.reservation_status AND id >= 0 AND user_id = 'user_id' ORDER BY id ASC LIMIT 11");
 
         let filter = ReservationFilterBuilder::default()
@@ -159,7 +150,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let sql = filter.to_sql().unwrap();
+        let sql = filter.to_sql();
         assert_eq!(sql, "SELECT * FROM rsvp.reservations WHERE status = 'pending'::rsvp.reservation_status AND id >= 0 AND user_id = 'user_id' AND resource_id = 'resource_id' ORDER BY id ASC LIMIT 11");
 
         let filter = ReservationFilterBuilder::default()
@@ -167,7 +158,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let sql = filter.to_sql().unwrap();
+        let sql = filter.to_sql();
         assert_eq!(sql, "SELECT * FROM rsvp.reservations WHERE status = 'pending'::rsvp.reservation_status AND id <= 9223372036854775807 AND TRUE ORDER BY id DESC LIMIT 11");
 
         let filter = ReservationFilterBuilder::default()
@@ -176,7 +167,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let sql = filter.to_sql().unwrap();
+        let sql = filter.to_sql();
         assert_eq!(sql, "SELECT * FROM rsvp.reservations WHERE status = 'pending'::rsvp.reservation_status AND id >= 100 AND user_id = 'user_id' ORDER BY id ASC LIMIT 12");
 
         let filter = ReservationFilterBuilder::default()
@@ -186,7 +177,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let sql = filter.to_sql().unwrap();
+        let sql = filter.to_sql();
         assert_eq!(sql, "SELECT * FROM rsvp.reservations WHERE status = 'pending'::rsvp.reservation_status AND id <= 10 AND user_id = 'user_id' ORDER BY id DESC LIMIT 12");
     }
 
@@ -202,7 +193,7 @@ mod tests {
         assert_eq!(pager.prev, None);
         assert_eq!(pager.next, Some(10));
 
-        let sql = filter.to_sql().unwrap();
+        let sql = filter.to_sql();
         assert_eq!(sql, "SELECT * FROM rsvp.reservations WHERE status = 'pending'::rsvp.reservation_status AND id >= 0 AND resource_id = 'router-1' ORDER BY id ASC LIMIT 11");
 
         let filter = filter.next_page(&pager).unwrap();
@@ -211,7 +202,7 @@ mod tests {
         assert_eq!(pager.prev, Some(11));
         assert_eq!(pager.next, Some(20));
 
-        let sql = filter.to_sql().unwrap();
+        let sql = filter.to_sql();
         assert_eq!(sql, "SELECT * FROM rsvp.reservations WHERE status = 'pending'::rsvp.reservation_status AND id >= 10 AND resource_id = 'router-1' ORDER BY id ASC LIMIT 12");
 
         let filter = filter.next_page(&pager).unwrap();
@@ -220,7 +211,7 @@ mod tests {
         assert_eq!(pager.prev, Some(21));
         assert!(pager.next.is_none());
 
-        let sql = filter.to_sql().unwrap();
+        let sql = filter.to_sql();
         assert_eq!(sql, "SELECT * FROM rsvp.reservations WHERE status = 'pending'::rsvp.reservation_status AND id >= 20 AND resource_id = 'router-1' ORDER BY id ASC LIMIT 12");
     }
 }

@@ -1,4 +1,4 @@
-use abi::{convert_to_utc_time, Normalizer, ToSql, Validator};
+use abi::{Normalizer, ToSql, Validator};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::Row;
@@ -111,26 +111,11 @@ impl Rsvp for ReservationManager {
         &self,
         query: abi::ReservationQuery,
     ) -> mpsc::Receiver<Result<abi::Reservation, abi::Error>> {
-        let user_id = string_to_option(&query.user_id);
-        let resource_id = string_to_option(&query.resource_id);
-        let start = query.start.map(convert_to_utc_time);
-        let end = query.end.map(convert_to_utc_time);
-        let status = abi::ReservationStatus::from_i32(query.status)
-            .unwrap_or(abi::ReservationStatus::Pending);
         let pool = self.pool.clone();
         let (tx, rx) = mpsc::channel(128);
         tokio::spawn(async move {
-            let mut rsvps = sqlx::query_as(
-                "SELECT * FROM rsvp.query($1, $2, $3, $4, $5::rsvp.reservation_status, $6)",
-            )
-            .bind(user_id)
-            .bind(resource_id)
-            .bind(start)
-            .bind(end)
-            .bind(status.to_string())
-            .bind(query.desc)
-            .fetch_many(&pool);
-
+            let sql = query.to_sql();
+            let mut rsvps = sqlx::query_as(&sql).fetch_many(&pool);
             while let Some(ret) = rsvps.next().await {
                 match ret {
                     Ok(Either::Left(r)) => {
@@ -161,20 +146,12 @@ impl Rsvp for ReservationManager {
         mut filter: abi::ReservationFilter,
     ) -> Result<(abi::FilterPager, Vec<abi::Reservation>), abi::Error> {
         filter.normalize()?;
-        let sql = filter.to_sql()?;
+        let sql = filter.to_sql();
         let rsvps: Vec<abi::Reservation> = sqlx::query_as(&sql).fetch_all(&self.pool).await?;
         let mut data = rsvps.into_iter().collect();
         let pager = filter.get_pager(&mut data);
         Ok((pager, data.into_iter().collect()))
     }
-}
-
-fn string_to_option(s: &str) -> Option<String> {
-    if s.is_empty() {
-        return None;
-    }
-
-    Some(s.into())
 }
 
 #[cfg(test)]
